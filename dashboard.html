@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base USDC Piggy Bank | Full MetaMask Integration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Ethers.js v6 via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/index.umd.min.js" type="application/javascript"></script>
+    <style>
+        :root {
+            --primary: #0052ff;
+            --primary-glow: rgba(0, 82, 255, 0.4);
+            --bg: #0a0a0c;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #ffffff;
+            --text-dim: #94a3b8;
+            --gold: #f59e0b;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 50% -20%, #17171a 0%, transparent 100%),
+                radial-gradient(circle at 10% 20%, rgba(0, 82, 255, 0.03) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 40px 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 82, 255, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: none;
+            border: 1px solid var(--border);
+        }
+
+        .input-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: white;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            padding: 4px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 12px;
+            color: var(--text-dim);
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px var(--primary-glow);
+        }
+
+        .progress-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary), #3b82f6);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .stat-box {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-locked { background: rgba(245, 158, 11, 0.1); color: var(--gold); }
+        .badge-released { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+
+        #wallet-address {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            font-family: monospace;
+        }
+
+        .hidden { display: none !important; }
+
+        .loader {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .alert-box {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            text-align: center;
+        }
+
+        .alert-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>OINK BASE</h1>
+            <button id="connect-btn" class="btn" onclick="connect()">Connect Wallet</button>
+            <div id="account-info" class="hidden">
+                 <span id="wallet-address"></span>
+            </div>
+        </header>
+
+        <div id="network-alert" class="alert-box hidden">
+            ⚠️ Please <button class="alert-btn" onclick="switchNetwork()">Switch to Base</button> to continue.
+        </div>
+
+        <div class="nav-tabs">
+            <div id="tab-deploy" class="tab active" onclick="setTab('deploy')">Deploy New</div>
+            <div id="tab-track" class="tab" onclick="setTab('track')">Track Existing</div>
+        </div>
+
+        <!-- DEPLOY SECTION -->
+        <div id="section-deploy" class="glass-card">
+            <h2 style="margin-top: 0; font-size: 1.2rem;">Deploy Piggy Bank</h2>
+            <p style="color: var(--text-dim); font-size: 0.9rem; margin-bottom: 24px;">Deploy a new USDC savings vault with logic enforced by MetaMask.</p>
+            
+            <div class="input-group">
+                <label>Beneficiary Address</label>
+                <input type="text" id="deploy-beneficiary" placeholder="0x..." />
+            </div>
+            <div class="input-group">
+                <label>Target Goal (USDC)</label>
+                <input type="number" id="deploy-target" placeholder="100" />
+            </div>
+            <div class="input-group">
+                <label>Lock Duration (Days)</label>
+                <input type="number" id="deploy-days" placeholder="30" />
+            </div>
+            
+            <button id="deploy-btn" class="btn" style="width: 100%;" onclick="handleDeploy()">
+                Deploy via MetaMask
+            </button>
+        </div>
+
+        <!-- TRACK SECTION -->
+        <div id="section-track" class="glass-card hidden">
+            <h2 style="margin-top: 0; font-size: 1.2rem;">Track Savings</h2>
+            <div class="input-group">
+                <label>Contract Address</label>
+                <input type="text" id="contract-addr" placeholder="0x..." />
+            </div>
+            <button id="track-btn" class="btn btn-ghost" style="width: 100%;" onclick="track()">Track Progress</button>
+        </div>
+
+        <!-- STATS DISPLAY -->
+        <div id="stats-card" class="glass-card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <h2 style="margin: 0; font-size: 1.1rem;">Savings Dashboard</h2>
+                <span id="status-badge" class="badge"></span>
+            </div>
+
+            <div class="progress-track">
+                <div id="progress-bar" class="progress-fill"></div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Current Balance</div>
+                    <div class="stat-value" id="stat-bal">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Goal Target</div>
+                    <div class="stat-value" id="stat-goal">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Beneficiary</div>
+                    <div class="stat-value" id="stat-beneficiary">-</div>
+                </div>
+                <div class="stat-box" style="grid-column: span 1;">
+                    <div class="stat-label">Unlock Time</div>
+                    <div class="stat-value" id="stat-unlock">-</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 32px;">
+                <button id="action-btn" class="btn" style="width: 100%;" onclick="handleDeposit()">Deposit USDC</button>
+            </div>
+        </div>
+
+        <p style="text-align: center; font-size: 0.7rem; color: var(--text-dim); margin-top: 20px;">
+            Full MetaMask Management &bull; Base Mainnet &bull; No Server
+        </p>
+    </div>
+
+    <script type="application/javascript">
+        const USDC_ADDR = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+        const BASE_CHAIN_ID = "0x2105"; // 8453
+
+        // Bytecode of BaseUsdcPiggyBank
+        const BYTECODE = "0x608060405234801561000f575f80fd5b5060405162000b6e38038062000b6e833981810160405281019061003391906101e7565b5f73ffffffffffffffffffffffffffffffffffffffff168373ffffffffffffffffffffffffffffffffffffffff1603610098576040517f5566df5c00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b5f82036100d1576040517f82d5d76a00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b42811161010a576040517fa5574da600000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b8273ffffffffffffffffffffffffffffffffffffffff1660808173ffffffffffffffffffffffffffffffffffffffff16815250508160a081815250508060c08181525050505050610237565b5f80fd5b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6101838261015a565b9050919050565b61019381610179565b811461019d575f80fd5b50565b5f815190506101ae8161018a565b92915050565b5f819050919050565b6101c6816101b4565b81146101d0575f80fd5b50565b5f815190506101e1816101bd565b92915050565b5f805f606084860312156101fe576101fd610156565b5b5f61020b868287016101a0565b935050602061021c868287016101d3565b925050604061022d868287016101d3565b9150509250925092565b60805160a05160c0516108f06200027e5f395f81816101b1015261032501525f818161018d01526102fa01525f818161015101528181610433015261048f01526108f05ff3fe608060405234801561000f575f80fd5b506004361061007b575f3560e01c8063aa082a9d11610059578063aa082a9d146100d9578063b6b55f25146100f7578063fa2a899714610113578063ff50abdc146101315761007b565b806338af3eed1461007f57806389a302711461009d578063953b8fb8146100bb575b5f80fd5b61008761014f565b60405161009491906106d1565b60405180910390f35b6100a5610173565b6040516100b29190610745565b60405180910390f35b6100c361018b565b6040516100d09190610776565b60405180910390f35b6100e16101af565b6040516100ee9190610776565b60405180910390f35b610111600480360381019061010c91906107bd565b6101d3565b005b61011b610500565b6040516101289190610802565b60405180910390f35b610139610512565b6040516101469190610776565b60405180910390f35b7f000000000000000000000000000000000000000000000000000000000000000081565b73833589fcd6edb6e08f4c7c32d4f71b54bda0291381565b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b60015f9054906101000a900460ff1615610219576040517f63b4904e00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b5f8103610252576040517f56316e8700000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b61029333308373833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff16610517909392919063ffffffff16565b805f808282546102a39190610848565b925050819055503373ffffffffffffffffffffffffffffffffffffffff167f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4826040516102f09190610776565b60405180910390a27f00000000000000000000000000000000000000000000000000000000000000005f5410158061034857507f00000000000000000000000000000000000000000000000000000000000000004210155b156104fd575f73833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff166370a08231306040518263ffffffff1660e01b815260040161039b91906106d1565b602060405180830381865afa1580156103b6573d5f803e3d5ffd5b505050506040513d601f19601f820116820180604052508101906103da919061088f565b90505f8103610415576040517fb10205ed00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6001805f6101000a81548160ff02191690831515021790555061048d7f00000000000000000000000000000000000000000000000000000000000000008273833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff1661056c9092919063ffffffff16565b7f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff167fb21fb52d5749b80f3182f8c6992236b5e5576681880914484d7f4c9b062e619e826040516104f39190610776565b60405180910390a2505b50565b60015f9054906101000a900460ff1681565b5f5481565b6105258484848460016105bf565b61056657836040517f5274afe700000000000000000000000000000000000000000000000000000000815260040161055d91906106d1565b60405180910390fd5b50505050565b6105798383836001610630565b6105ba57826040517f5274afe70000000000000000000000000000000000000000000000000000000081526004016105b191906106d1565b60405180910390fd5b505050565b5f806323b872dd60e01b9050604051815f525f1960601c87166004525f1960601c86166024528460445260205f60645f808c5af1925060015f5114831661061d578383151615610611573d5f823e3d81fd5b5f883b113d1516831692505b806040525f606052505095945050505050565b5f8063a9059cbb60e01b9050604051815f525f1960601c86166004528460245260205f60445f808b5af1925060015f51148316610684578383151615610678573d5f823e3d81fd5b5f873b113d1516831692505b806040525050949350505050565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6106bb82610692565b9050919050565b6106cb816106b1565b82525050565b5f6020820190506106e45f8301846106c2565b92915050565b5f819050919050565b5f61070d61070861070384610692565b6106ea565b610692565b9050919050565b5f61071e826106f3565b9050919050565b5f61072f82610714565b9050919050565b61073f81610725565b82525050565b5f6020820190506107585f830184610736565b92915050565b5f819050919050565b6107708161075e565b82525050565b5f6020820190506107895f830184610767565b92915050565b5f80fd5b61079c8161075e565b81146107a6575f80fd5b50565b5f813590506107b781610793565b92915050565b5f602082840312156107d2576107d161078f565b5b5f6107df848285016107a9565b91505092915050565b5f8115159050919050565b6107fc816107e8565b82525050565b5f6020820190506108155f8301846107f3565b92915050565b7f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f6108528261075e565b915061085d8361075e565b92508282019050808211156108755761087461081b565b5b92915050565b5f8151905061088981610793565b92915050565b5f602082840312156108a4576108a361078f565b5b5f6108b18482850161087b565b9150509291505056fea26469706673582212208bf374089c22a75e68a82c5d20a87996606095f7e0029f6655225e173cd7d8bc64736f6c63430008180033";
+
+        const PIGGY_ABI = [
+            "constructor(address beneficiary, uint256 targetAmount, uint256 unlockTimestamp)",
+            "function USDC() view returns (address)",
+            "function BENEFICIARY() view returns (address)",
+            "function TARGET_AMOUNT() view returns (uint256)",
+            "function UNLOCK_TIMESTAMP() view returns (uint256)",
+            "function totalDeposited() view returns (uint256)",
+            "function isReleased() view returns (bool)",
+            "function deposit(uint256 amount)"
+        ];
+
+        const ERC20_ABI = [
+            "function balanceOf(address) view returns (uint256)",
+            "function approve(address, uint256) returns (bool)",
+            "function allowance(address, address) view returns (uint256)"
+        ];
+
+        let provider, signer, account;
+        let currentContractAddr = "";
+
+        async function connect() {
+            if (!window.ethereum) return alert("Install MetaMask or Coinbase Wallet!");
+            
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                account = accounts[0];
+                
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+
+                document.getElementById('connect-btn').classList.add('hidden');
+                document.getElementById('account-info').classList.remove('hidden');
+                document.getElementById('wallet-address').innerText = account.slice(0,6) + "..." + account.slice(-4);
+
+                checkNetwork();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function switchNetwork() {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BASE_CHAIN_ID }],
+                });
+            } catch (switchError) {
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [{
+                                chainId: BASE_CHAIN_ID,
+                                chainName: 'Base Mainnet',
+                                rpcUrls: ['https://mainnet.base.org'],
+                                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                                blockExplorerUrls: ['https://basescan.org']
+                            }],
+                        });
+                    } catch (addError) {
+                        console.error(addError);
+                    }
+                }
+            }
+        }
+
+        async function checkNetwork() {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            if (chainId !== BASE_CHAIN_ID) {
+                document.getElementById('network-alert').classList.remove('hidden');
+                return false;
+            } else {
+                document.getElementById('network-alert').classList.add('hidden');
+                return true;
+            }
+        }
+
+        function setTab(name) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${name}`).classList.add('active');
+            
+            document.getElementById('section-deploy').classList.add('hidden');
+            document.getElementById('section-track').classList.add('hidden');
+            document.getElementById(`section-${name}`).classList.remove('hidden');
+        }
+
+        async function handleDeploy() {
+            if (!account) return connect();
+            if (!(await checkNetwork())) return switchNetwork();
+
+            const beneficiary = document.getElementById('deploy-beneficiary').value.trim();
+            const targetUsdc = document.getElementById('deploy-target').value;
+            const lockDays = document.getElementById('deploy-days').value;
+
+            if (!ethers.isAddress(beneficiary)) return alert("Invalid beneficiary address!");
+            if (!targetUsdc || targetUsdc <= 0) return alert("Target must be positive!");
+            if (!lockDays || lockDays < 0) return alert("Duration must be non-negative!");
+
+            const btn = document.getElementById('deploy-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span> Deploying...';
+
+            try {
+                const factory = new ethers.ContractFactory(PIGGY_ABI, BYTECODE, signer);
+                
+                const targetUnits = ethers.parseUnits(targetUsdc.toString(), 6);
+                const unlockTs = Math.floor(Date.now() / 1000) + (lockDays * 86400);
+
+                const contract = await factory.deploy(beneficiary, targetUnits, unlockTs);
+                await contract.waitForDeployment();
+                
+                const newAddr = await contract.getAddress();
+                alert("Success! Piggy Bank deployed at: " + newAddr);
+                
+                document.getElementById('contract-addr').value = newAddr;
+                setTab('track');
+                track();
+            } catch (err) {
+                console.error(err);
+                alert("Deployment failed: " + (err.reason || err.message));
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Deploy via MetaMask';
+            }
+        }
+
+        async function track() {
+            const addrInput = document.getElementById('contract-addr');
+            const addr = addrInput.value.trim();
+            
+            if (!ethers.isAddress(addr)) {
+                addrInput.style.borderColor = "#ef4444";
+                return alert("Invalid address!");
+            }
+            addrInput.style.borderColor = "var(--border)";
+            
+            currentContractAddr = addr;
+            const btn = document.getElementById('track-btn');
+            btn.innerHTML = '<span class="loader"></span> Tracking...';
+            btn.disabled = true;
+
+            try {
+                // If not connected, use a public RPC for read-only
+                const readProvider = provider || new ethers.JsonRpcProvider("https://mainnet.base.org");
+                const contract = new ethers.Contract(addr, PIGGY_ABI, readProvider);
+                const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, readProvider);
+
+                const [target, unlock, total, released, beneficiary, balance] = await Promise.all([
+                    contract.TARGET_AMOUNT(),
+                    contract.UNLOCK_TIMESTAMP(),
+                    contract.totalDeposited(),
+                    contract.isReleased(),
+                    contract.BENEFICIARY(),
+                    usdc.balanceOf(addr)
+                ]);
+
+                updateUI(target, unlock, total, released, beneficiary, balance);
+                document.getElementById('stats-card').classList.remove('hidden');
+            } catch (err) {
+                console.error(err);
+                alert("Could not load contract. Verify it's a valid Piggy Bank on Base.");
+            } finally {
+                btn.innerHTML = 'Track Progress';
+                btn.disabled = false;
+            }
+        }
+
+        function updateUI(target, unlock, total, released, beneficiary, balance) {
+            const fmt = (v) => parseFloat(ethers.formatUnits(v, 6)).toLocaleString();
+            
+            document.getElementById('stat-bal').innerText = fmt(balance) + " USDC";
+            document.getElementById('stat-goal').innerText = fmt(target) + " USDC";
+            document.getElementById('stat-beneficiary').innerText = beneficiary.slice(0,6) + "..." + beneficiary.slice(-4);
+            
+            const date = new Date(Number(unlock) * 1000);
+            document.getElementById('stat-unlock').innerText = date.toLocaleDateString() + " " + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            const progress = (Number(total) / Number(target)) * 100;
+            document.getElementById('progress-bar').style.width = Math.min(progress, 100) + "%";
+
+            const badge = document.getElementById('status-badge');
+            const actionBtn = document.getElementById('action-btn');
+
+            if (released) {
+                badge.innerText = "Released";
+                badge.className = "badge badge-released";
+                actionBtn.disabled = true;
+                actionBtn.innerText = "Funds Released";
+            } else {
+                badge.innerText = "Locked";
+                badge.className = "badge badge-locked";
+                actionBtn.disabled = false;
+                actionBtn.innerText = "Deposit USDC";
+            }
+        }
+
+        async function handleDeposit() {
+            if (!account) return connect();
+            if (!(await checkNetwork())) return switchNetwork();
+
+            const amt = prompt("Amount of USDC to deposit (e.g. 10):");
+            if (amt === null) return;
+            
+            if (!amt || isNaN(amt) || parseFloat(amt) <= 0) {
+                return alert("Enter a valid positive number.");
+            }
+            
+            const units = ethers.parseUnits(amt, 6);
+            const usdc = new ethers.Contract(USDC_ADDR, ERC20_ABI, signer);
+            const actionBtn = document.getElementById('action-btn');
+            
+            try {
+                actionBtn.disabled = true;
+                actionBtn.innerHTML = '<span class="loader"></span> Preparing...';
+                
+                const allowance = await usdc.allowance(account, currentContractAddr);
+                if (allowance < units) {
+                    actionBtn.innerHTML = '<span class="loader"></span> Approving USDC...';
+                    const txApprove = await usdc.approve(currentContractAddr, units);
+                    await txApprove.wait();
+                }
+
+                actionBtn.innerHTML = '<span class="loader"></span> Confirm Deposit...';
+                const contract = new ethers.Contract(currentContractAddr, PIGGY_ABI, signer);
+                const txDeposit = await contract.deposit(units);
+                await txDeposit.wait();
+                
+                alert("Deposit successful!");
+                track(); 
+            } catch (err) {
+                console.error(err);
+                alert("Transaction failed: " + (err.reason || err.message));
+            } finally {
+                actionBtn.disabled = false;
+                actionBtn.innerText = "Deposit USDC";
+            }
+        }
+
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (acc) => {
+                if (acc.length === 0) window.location.reload();
+                else account = acc[0];
+            });
+            window.ethereum.on('chainChanged', () => window.location.reload());
+        }
+    </script>
+</body>
+</html>
