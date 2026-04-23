@@ -66,14 +66,32 @@ contract BaseUsdcPiggyBank {
 
         // 2. Check for release condition
         if (totalDeposited >= TARGET_AMOUNT || block.timestamp >= UNLOCK_TIMESTAMP) {
-            uint256 balance = USDC.balanceOf(address(this));
-            
-            if (balance == 0) revert NothingToRelease();
-
-            isReleased = true;
-            USDC.safeTransfer(BENEFICIARY, balance);
-
-            emit Released(BENEFICIARY, balance);
+            _release();
         }
+    }
+
+    /**
+     * @notice Manually trigger the release if conditions are met.
+     * @dev Useful if funds were sent directly via transfer() or time has passed.
+     */
+    function release() external {
+        if (isReleased) revert AlreadyReleased();
+        if (totalDeposited < TARGET_AMOUNT && block.timestamp < UNLOCK_TIMESTAMP) {
+            revert NothingToRelease();
+        }
+        _release();
+    }
+
+    /**
+     * @dev Internal function to handle the actual transfer of funds to the beneficiary.
+     */
+    function _release() internal {
+        uint256 balance = USDC.balanceOf(address(this));
+        if (balance == 0) revert NothingToRelease();
+
+        isReleased = true;
+        USDC.safeTransfer(BENEFICIARY, balance);
+
+        emit Released(BENEFICIARY, balance);
     }
 }

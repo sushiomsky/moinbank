@@ -73,23 +73,60 @@ contract BaseUsdcPiggyBankTest is Test {
         assertEq(USDC.balanceOf(beneficiary), balanceBefore + depositAmt);
     }
 
-    function test_RevertDepositAfterRelease() public {
-        // Trigger release first
+    function test_ReleaseAfterTargetReached() public {
+        uint256 depositAmt = 1000 * 1e6;
         vm.prank(user);
-        piggyBank.deposit(targetAmount);
-        
-        assertTrue(piggyBank.isReleased());
+        piggyBank.deposit(depositAmt);
 
-        // Try to deposit again
-        vm.expectRevert(BaseUsdcPiggyBank.AlreadyReleased.selector);
-        vm.prank(user);
-        piggyBank.deposit(1e6);
+        // Released automatically by deposit
+        assertTrue(piggyBank.isReleased());
     }
 
-    function test_RevertZeroDeposit() public {
-        vm.expectRevert(BaseUsdcPiggyBank.ZeroDeposit.selector);
+    function test_ManualReleaseAfterTime() public {
+        uint256 depositAmt = 100 * 1e6;
         vm.prank(user);
-        piggyBank.deposit(0);
+        piggyBank.deposit(depositAmt);
+
+        vm.warp(unlockTime + 1);
+        
+        // Not released yet (deposit hasn't been called post-warp)
+        assertFalse(piggyBank.isReleased());
+
+        piggyBank.release();
+        assertTrue(piggyBank.isReleased());
+        assertEq(USDC.balanceOf(beneficiary), depositAmt);
+    }
+
+    function test_ReleaseSweepsDirectTransfers() public {
+        // 1. Send USDC directly to contract (bypassing deposit)
+        uint256 directAmt = 100 * 1e6;
+        vm.prank(user);
+        USDC.transfer(address(piggyBank), directAmt);
+        
+        assertEq(piggyBank.totalDeposited(), 0);
+        assertEq(USDC.balanceOf(address(piggyBank)), directAmt);
+
+        // 2. Trigger release via time
+        vm.warp(unlockTime + 1);
+        piggyBank.release();
+
+        assertTrue(piggyBank.isReleased());
+        assertEq(USDC.balanceOf(beneficiary), directAmt);
+    }
+
+    function test_RevertReleaseEarly() public {
+        vm.expectRevert(BaseUsdcPiggyBank.NothingToRelease.selector);
+        piggyBank.release();
+    }
+
+    function test_RevertReleaseAlreadyReleased() public {
+        vm.warp(unlockTime + 1);
+        vm.prank(user);
+        piggyBank.deposit(1e6);
+        assertTrue(piggyBank.isReleased());
+
+        vm.expectRevert(BaseUsdcPiggyBank.AlreadyReleased.selector);
+        piggyBank.release();
     }
 
     function test_ConstructorReverts() public {

@@ -1,97 +1,58 @@
-# 🐷 OINK BASE: The Serverless USDC Piggy Bank
+# 🐷 OINK BASE: Your USDC Piggy Bank
 
-**OINK BASE** is a production-ready, serverless decentralized application (dApp) that allows anyone to create a private USDC savings vault on the **Base** network. 
+**The most secure, immutable, and decentralized way to save USDC on Base.**
 
-Unlike traditional savings accounts, OINK BASE is entirely non-custodial, serverless, and enforced by smart contract logic. Your funds are locked until your goal is met or your time is up—no middleman, no fees, just code.
+OINK BASE is a serverless, "set-it-and-forget-it" savings vault. Once you deploy your piggy bank, the logic is locked into the blockchain. **No one—not even the creators—can change the rules or touch your funds.**
 
----
+![OINK BASE Dashboard](assets/dashboard_preview.png)
 
-## 🚀 Key Features
+## ✨ Why OINK BASE?
 
-- **Self-Governing Savings**: Funds are automatically released to the beneficiary only when the target amount is reached OR the lock duration expires.
-- **Serverless Dashboard**: A single-file HTML dashboard (`dashboard.html`) that interacts directly with the blockchain via MetaMask. No backend required.
-- **Base Network Native**: Built for Base, offering ultra-low transaction fees and fast confirmation times.
-- **Non-Custodial**: You (or your designated beneficiary) are the only ones who can ever touch the funds.
-- **MetaMask Integrated**: Seamless deployment and management directly from your browser.
-
----
-
-## 🛠 Tech Stack
-
-- **Smart Contracts**: Solidity 0.8.24 (Foundry)
-- **Frontend**: Vanilla HTML5, CSS3 (Glassmorphism), and JavaScript
-- **Blockchain Library**: Ethers.js v6
-- **Network**: Base Mainnet (Chain ID: 8453)
-- **Asset**: USDC (Native Base USDC)
+-   **🔒 Bulletproof Security**: Built on the Base network (Coinbase's Layer 2). Funds are held in a smart contract with NO "owner" or "admin" keys.
+-   **💎 True Immutability**: The contract cannot be deleted, modified, or "upgraded". Your savings goals are enforced by math, not people.
+-   **🚀 Zero Fees**: We take 0% of your savings. You only pay standard Base network gas fees (pennies).
+-   **🦊 MetaMask Native**: Works directly in your browser with MetaMask or any EVM wallet. No accounts, no emails, no KYC.
 
 ---
 
-## 📖 User Manual
+## 🛠 How It Works
 
-### 1. Opening the Dashboard
-Simply open the `dashboard.html` file in any modern web browser with a web3 wallet (like MetaMask or Coinbase Wallet) installed.
+### 1. Set Your Goal
+Choose who receives the funds (the **Beneficiary**), how much you want to save (**Target Goal**), and how long you want to lock it (**Duration**). 
 
-### 2. Connecting Your Wallet
-- Click **"Connect Wallet"** in the top right.
-- Ensure your wallet is switched to the **Base Mainnet**. If not, the dashboard will prompt you to switch or add the network automatically.
+### 2. Deploy Your Vault
+Click "Deploy" to create your personal piggy bank on the blockchain. You will receive a unique **Vault Address**. Save this address!
 
-### 3. Deploying a New Piggy Bank
-Navigate to the **"Deploy New"** tab:
-- **Beneficiary Address**: The wallet address that will receive the funds once unlocked.
-- **Target Goal (USDC)**: The amount of USDC you want to save.
-- **Lock Duration (Days)**: The minimum number of days the funds should be locked (acts as a "fail-safe" unlock if the goal isn't met).
-- Click **"Deploy via MetaMask"**. Once the transaction confirms, you will receive a unique contract address.
+### 3. Save USDC
+Send USDC to your Vault Address at any time. You can use the "Track" tab in our dashboard to watch your progress.
 
-### 4. Tracking & Depositing
-Navigate to the **"Track Existing"** tab:
-- Enter your **Contract Address**.
-- View your progress bar, current balance, and target.
-- Click **"Deposit USDC"** to add funds to your piggy bank.
-- **Note**: The first deposit will require a USDC "Approve" transaction before the "Deposit" transaction.
+### 4. Automatic Release
+Your funds are automatically released to the Beneficiary when **either** of these conditions are met:
+-   The **Target Goal** is reached.
+-   The **Minimum Lock Time** has passed.
 
-### 5. Automatic Release
-The contract follows strict "Piggy Bank" logic:
-- If `Total Deposited >= Target Amount`, the contract **automatically** sends the entire balance to the Beneficiary.
-- If `Current Time >= Unlock Timestamp`, the next deposit (even a tiny one) will trigger the release of all funds to the Beneficiary.
+> [!NOTE]
+> If you reach your goal early or the time expires, anyone can click the **"Release Funds"** button on the dashboard to trigger the payout to the beneficiary.
 
 ---
 
-## 💻 Developer Guide
+## 🛡️ Security Guarantees
 
-### Prerequisites
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) installed.
-- A private key and RPC URL for Base.
-
-### Contract Interaction
-The core logic resides in `src/BaseUsdcPiggyBank.sol`. 
-
-**Build:**
-```bash
-forge build
-```
-
-**Test:**
-```bash
-forge test
-```
-
-**Deploy via CLI:**
-```bash
-forge script script/Deploy.s.sol --rpc-url <BASE_RPC_URL> --broadcast --verify
-```
-
-### Dashboard Customization
-The `dashboard.html` is designed to be standalone. If you update the smart contract, make sure to update the `BYTECODE` constant and `PIGGY_ABI` in the `<script>` section of the HTML file.
+OINK BASE is designed for maximum safety:
+1.  **No Ownership**: Once deployed, the contract is autonomous. There is no `owner` variable and no `onlyOwner` functions.
+2.  **No Deletion**: The code contains no `selfdestruct` mechanism. It will exist as long as the Base network exists.
+3.  **Strict Release**: Funds can ONLY be sent to the pre-defined Beneficiary address. There is no function to send funds anywhere else.
+4.  **Sweeping Logic**: Any USDC sent directly to the contract address is automatically included in the final release.
 
 ---
 
-## 🔒 Security Considerations
+## 🚀 Getting Started
 
-- **Immutability**: Once a Piggy Bank is deployed, the Beneficiary, Target, and Unlock Time are **immutable**. They cannot be changed by anyone, including the creator.
-- **USDC Only**: This specific version is hardcoded to support only the official Circle USDC on Base (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`). Do not send other tokens to the contract address.
-- **Audit**: This code is provided as a demonstration and has not been formally audited. Use at your own risk.
+1.  Open `dashboard.html` in your browser.
+2.  Connect your MetaMask wallet.
+3.  Switch to the **Base Mainnet**.
+4.  Start saving!
 
 ---
 
-## 📄 License
-Distributed under the MIT License. See `LICENSE` for more information (if applicable).
+*Disclaimer: OINK BASE is a decentralized tool. Always verify the Vault Address before sending large amounts of USDC. We are not responsible for lost private keys.*
