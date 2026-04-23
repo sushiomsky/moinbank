@@ -21,6 +21,7 @@
             --gold: #fbbf24;
             --gold-glow: rgba(251, 191, 36, 0.3);
             --success: #10b981;
+            --error: #ef4444;
         }
 
         * { box-sizing: border-box; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -107,10 +108,11 @@
             justify-content: center;
             gap: 10px;
             box-shadow: 0 8px 24px var(--primary-glow);
+            width: 100%;
         }
 
         .btn:hover {
-            transform: translateY(-2px) scale(1.02);
+            transform: translateY(-2px) scale(1.01);
             box-shadow: 0 12px 32px var(--primary-glow);
             background: var(--primary-light);
         }
@@ -130,31 +132,22 @@
             box-shadow: none;
         }
 
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: none;
-        }
-
         .btn-gold {
             background: var(--gold);
             color: #000;
             box-shadow: 0 8px 24px var(--gold-glow);
-        }
-        .btn-gold:hover {
-            background: #fcd34d;
-            box-shadow: 0 12px 32px var(--gold-glow);
         }
 
         .input-group { margin-bottom: 24px; }
 
         label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             margin-bottom: 10px;
             color: var(--text-dim);
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
 
         input {
@@ -297,6 +290,16 @@
             justify-content: space-between;
         }
 
+        .success-box {
+            padding: 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
         .network-btn {
             background: #ef4444;
             color: white;
@@ -308,14 +311,21 @@
             cursor: pointer;
         }
 
-        h2 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .link-text {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .link-text:hover { text-decoration: underline; }
+
+        h2 { font-family: 'Outfit', sans-serif; font-weight: 700; margin-top: 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <div class="logo">OINK<span>BASE</span></div>
-            <button id="connect-btn" class="btn" onclick="connect()">Connect</button>
+            <button id="connect-btn" class="btn" style="width: auto;" onclick="connect()">Connect</button>
             <div id="account-info" class="hidden">
                  <span id="wallet-address"></span>
             </div>
@@ -326,6 +336,10 @@
             <button class="network-btn" onclick="switchNetwork()">Switch</button>
         </div>
 
+        <div id="deploy-success" class="success-box hidden">
+            Vault deployed! <a id="vault-link" href="#" target="_blank" class="link-text">View on BaseScan</a>
+        </div>
+
         <div class="tabs">
             <div id="tab-deploy" class="tab active" onclick="setTab('deploy')">Deploy New</div>
             <div id="tab-track" class="tab" onclick="setTab('track')">Track Existing</div>
@@ -333,7 +347,7 @@
 
         <!-- DEPLOY SECTION -->
         <div id="section-deploy" class="glass-card">
-            <h2 style="margin-top: 0; font-size: 1.4rem;">Start Saving</h2>
+            <h2 style="font-size: 1.4rem;">Start Saving</h2>
             <p style="color: var(--text-dim); font-size: 0.95rem; margin-bottom: 32px;">Deploy an immutable vault. Locked until your goal or time expires.</p>
             
             <div class="input-group">
@@ -349,20 +363,20 @@
                 <input type="number" id="deploy-days" placeholder="30" />
             </div>
             
-            <button id="deploy-btn" class="btn" style="width: 100%;" onclick="handleDeploy()">
-                Deploy Vault
+            <button id="deploy-btn" class="btn" onclick="handleDeploy()">
+                Deploy Vault via MetaMask
             </button>
         </div>
 
         <!-- TRACK SECTION -->
         <div id="section-track" class="glass-card hidden">
-            <h2 style="margin-top: 0; font-size: 1.4rem;">Track Progress</h2>
+            <h2 style="font-size: 1.4rem;">Track Progress</h2>
             <p style="color: var(--text-dim); font-size: 0.95rem; margin-bottom: 32px;">Enter the vault address to view current savings status.</p>
             <div class="input-group">
                 <label>Vault Address</label>
                 <input type="text" id="contract-addr" placeholder="0x..." />
             </div>
-            <button id="track-btn" class="btn btn-secondary" style="width: 100%;" onclick="track()">View Dashboard</button>
+            <button id="track-btn" class="btn btn-secondary" onclick="track()">View Dashboard</button>
         </div>
 
         <!-- STATS DISPLAY -->
@@ -402,8 +416,8 @@
             </div>
 
             <div id="action-container" style="margin-top: 36px; display: flex; flex-direction: column; gap: 12px;">
-                <button id="deposit-btn" class="btn" style="width: 100%;" onclick="handleDeposit()">Deposit USDC</button>
-                <button id="release-btn" class="btn btn-gold hidden" style="width: 100%;" onclick="handleRelease()">Release Funds</button>
+                <button id="deposit-btn" class="btn" onclick="handleDeposit()">Deposit USDC</button>
+                <button id="release-btn" class="btn btn-gold hidden" onclick="handleRelease()">Release Funds</button>
             </div>
         </div>
 
@@ -433,7 +447,7 @@
             "function allowance(address, address) view returns (uint256)"
         ];
 
-        // Bytecode of BaseUsdcPiggyBank (updated with release() logic)
+        // Final compiled bytecode
         const BYTECODE = "0x60e060405234801562000010575f80fd5b5060405162000c8d38038062000c8d8339818101604052810190620000369190620001fa565b5f73ffffffffffffffffffffffffffffffffffffffff168373ffffffffffffffffffffffffffffffffffffffff16036200009c576040517f5566df5c00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b5f8203620000d6576040517f82d5d76a00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b42811162000110576040517fa5574da600000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b8273ffffffffffffffffffffffffffffffffffffffff1660808173ffffffffffffffffffffffffffffffffffffffff16815250508160a081815250508060c0818152505050505062000253565b5f80fd5b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6200018c8262000161565b9050919050565b6200019e8162000180565b8114620001a9575f80fd5b50565b5f81519050620001bc8162000193565b92915050565b5f819050919050565b620001d681620001c2565b8114620001e1575f80fd5b50565b5f81519050620001f481620001cb565b92915050565b5f805f606084860312156200021457620002136200015d565b5b5f6200022386828701620001ac565b93505060206200023686828701620001e4565b92505060406200024986828701620001e4565b9150509250925092565b60805160a05160c0516109e5620002a85f395f818161021f0152818161029c015261041001525f818161018a015281816101f401526103e501525f818161016601528181610541015261059d01526109e55ff3fe608060405234801561000f575f80fd5b5060043610610086575f3560e01c80639e02cf4e116100595780639e02cf4e146100ee578063b6b55f251461010c578063fa2a899714610128578063ff50abdc1461014657610086565b80632f99c6cc1461008a57806330f0dbe0146100a857806386d1a69f146100c657806389a30271146100d0575b5f80fd5b610092610164565b60405161009f91906107c6565b60405180910390f35b6100b0610188565b6040516100bd91906107f7565b60405180910390f35b6100ce6101ac565b005b6100d8610282565b6040516100e5919061086b565b60405180910390f35b6100f661029a565b60405161010391906107f7565b60405180910390f35b610126600480360381019061012191906108b2565b6102be565b005b610130610444565b60405161013d91906108f7565b60405180910390f35b61014e610456565b60405161015b91906107f7565b60405180910390f35b7f000000000000000000000000000000000000000000000000000000000000000081565b7f000000000000000000000000000000000000000000000000000000000000000081565b60015f9054906101000a900460ff16156101f2576040517f63b4904e00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b7f00000000000000000000000000000000000000000000000000000000000000005f5410801561024157507f000000000000000000000000000000000000000000000000000000000000000042105b15610278576040517fb10205ed00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b61028061045b565b565b73833589fcd6edb6e08f4c7c32d4f71b54bda0291381565b7f000000000000000000000000000000000000000000000000000000000000000081565b60015f9054906101000a900460ff1615610304576040517f63b4904e00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b5f810361033d576040517f56316e8700000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b61037e33308373833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff1661060c909392919063ffffffff16565b805f8082825461038e919061093d565b925050819055503373ffffffffffffffffffffffffffffffffffffffff167f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4826040516103db91906107f7565b60405180910390a27f00000000000000000000000000000000000000000000000000000000000000005f5410158061043357507f00000000000000000000000000000000000000000000000000000000000000004210155b156104415761044061045b565b5b50565b60015f9054906101000a900460ff1681565b5f5481565b5f73833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff166370a08231306040518263ffffffff1660e01b81526004016104a991906107c6565b602060405180830381865afa1580156104c4573d5f803e3d5ffd5b505050506040513d601f19601f820116820180604052508101906104e89190610984565b90505f8103610523576040517fb10205ed00000000000000000000000000000000000000000000000000000000815260040160405180910390fd5b6001805f6101000a81548160ff02191690831515021790555061059b7f00000000000000000000000000000000000000000000000000000000000000008273833589fcd6edb6e08f4c7c32d4f71b54bda0291373ffffffffffffffffffffffffffffffffffffffff166106619092919063ffffffff16565b7f000000000000000000000000000000000000000000000000000000000000000073ffffffffffffffffffffffffffffffffffffffff167fb21fb52d5749b80f3182f8c6992236b5e5576681880914484d7f4c9b062e619e8260405161060191906107f7565b60405180910390a250565b61061a8484848460016106b4565b61065b57836040517f5274afe700000000000000000000000000000000000000000000000000000000815260040161065291906107c6565b60405180910390fd5b50505050565b61066e8383836001610725565b6106af57826040517f5274afe70000000000000000000000000000000000000000000000000000000081526004016106a691906107c6565b60405180910390fd5b505050565b5f806323b872dd60e01b9050604051815f525f1960601c87166004525f1960601c86166024528460445260205f60645f808c5af1925060015f51148316610712578383151615610706573d5f823e3d81fd5b5f883b113d1516831692505b806040525f606052505095945050505050565b5f8063a9059cbb60e01b9050604051815f525f1960601c86166004528460245260205f60445f808b5af1925060015f5114831661077957838315161561076d573d5f823e3d81fd5b5f873b113d1516831692505b806040525050949350505050565b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f6107b082610787565b9050919050565b6107c0816107a6565b82525050565b5f6020820190506107d95f8301846107b7565b92915050565b5f819050919050565b6107f1816107df565b82525050565b5f60208201905061080a5f8301846107e8565b92915050565b5f819050919050565b5f61083361082e61082984610787565b610810565b610787565b9050919050565b5f61084482610819565b9050919050565b5f6108558261083a565b9050919050565b6108658161084b565b82525050565b5f60208201905061087e5f83018461085c565b92915050565b5f80fd5b610891816107df565b811461089b575f80fd5b50565b5f813590506108ac81610888565b92915050565b5f602082840312156108c7576108c6610884565b5b5f6108d48482850161089e565b91505092915050565b5f8115159050919050565b6108f1816108dd565b82525050565b5f60208201905061090a5f8301846108e8565b92915050567f4e487b71000000000000000000000000000000000000000000000000000000005f52601160045260245ffd5b5f610947826107df565b9150610952836107df565b925082820190508082111561096a57610969610910565b5b92915050565b5f8151905061097e81610888565b92915050565b5f6020828403121561099957610998610884565b5b5f6109a684828501610970565b9150509291505056fea2646970667358221220784c6aaa77033683cf85da1a5d3b1406c422fb1d63c8984ccc8733d14d0122e864736f6c63430008180033";
 
         let provider, signer, account;
@@ -476,6 +490,7 @@
         }
 
         async function checkNetwork() {
+            if (!window.ethereum) return false;
             const chainId = await window.ethereum.request({ method: 'eth_chainId' });
             const isBase = chainId === BASE_CHAIN_ID;
             document.getElementById('network-alert').classList.toggle('hidden', isBase);
@@ -488,6 +503,7 @@
             document.getElementById('section-deploy').classList.add('hidden');
             document.getElementById('section-track').classList.add('hidden');
             document.getElementById(`section-${name}`).classList.remove('hidden');
+            document.getElementById('deploy-success').classList.add('hidden');
         }
 
         async function handleDeploy() {
@@ -496,30 +512,46 @@
 
             const beneficiary = document.getElementById('deploy-beneficiary').value.trim();
             const targetUsdc = document.getElementById('deploy-target').value;
-            const lockDays = document.getElementById('deploy-days').value;
+            const lockDays = document.getElementById('deploy-days').value || 0;
 
-            if (!ethers.isAddress(beneficiary)) return alert("Invalid beneficiary!");
-            if (!targetUsdc || targetUsdc <= 0) return alert("Target must be positive!");
+            if (!ethers.isAddress(beneficiary)) return alert("Invalid beneficiary address!");
+            if (!targetUsdc || targetUsdc <= 0) return alert("Target amount must be positive!");
 
             const btn = document.getElementById('deploy-btn');
+            const successBox = document.getElementById('deploy-success');
             btn.disabled = true;
-            btn.innerHTML = '<div class="loader"></div>';
+            btn.innerHTML = '<div class="loader"></div> Initializing...';
 
             try {
                 const factory = new ethers.ContractFactory(PIGGY_ABI, BYTECODE, signer);
                 const targetUnits = ethers.parseUnits(targetUsdc.toString(), 6);
                 const unlockTs = Math.floor(Date.now() / 1000) + (lockDays * 86400);
+
+                btn.innerHTML = '<div class="loader"></div> Waiting for Signature...';
                 const contract = await factory.deploy(beneficiary, targetUnits, unlockTs);
+                
+                btn.innerHTML = '<div class="loader"></div> Deploying Transaction...';
                 await contract.waitForDeployment();
+                
                 const newAddr = await contract.getAddress();
+                
+                // Show success UI
+                successBox.classList.remove('hidden');
+                document.getElementById('vault-link').href = `https://basescan.org/address/${newAddr}`;
+                
+                // Switch to track tab
                 document.getElementById('contract-addr').value = newAddr;
-                setTab('track');
-                track();
+                setTimeout(() => {
+                    setTab('track');
+                    track();
+                }, 2000);
+
             } catch (err) {
-                alert("Failed: " + (err.reason || err.message));
+                console.error(err);
+                alert("Deployment Failed: " + (err.reason || err.message));
             } finally {
                 btn.disabled = false;
-                btn.innerText = 'Deploy Vault';
+                btn.innerText = 'Deploy Vault via MetaMask';
             }
         }
 
@@ -529,7 +561,7 @@
             
             currentContractAddr = addr;
             const btn = document.getElementById('track-btn');
-            btn.innerHTML = '<div class="loader"></div>';
+            btn.innerHTML = '<div class="loader"></div> Loading...';
             btn.disabled = true;
 
             try {
@@ -549,7 +581,7 @@
                 updateUI(target, unlock, total, released, beneficiary, balance);
                 document.getElementById('stats-card').classList.remove('hidden');
             } catch (err) {
-                alert("Load failed. Verify address is a vault on Base.");
+                alert("Load failed. Verify address is a valid OINK vault on Base.");
             } finally {
                 btn.innerHTML = 'View Dashboard';
                 btn.disabled = false;
@@ -594,7 +626,7 @@
             if (!account) return connect();
             if (!(await checkNetwork())) return switchNetwork();
 
-            const amt = prompt("USDC amount:");
+            const amt = prompt("USDC amount to deposit:");
             if (!amt || isNaN(amt)) return;
             
             const units = ethers.parseUnits(amt, 6);
@@ -603,12 +635,13 @@
             
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<div class="loader"></div>';
+                btn.innerHTML = '<div class="loader"></div> Approving...';
                 const allowance = await usdc.allowance(account, currentContractAddr);
                 if (allowance < units) {
                     const tx = await usdc.approve(currentContractAddr, units);
                     await tx.wait();
                 }
+                btn.innerHTML = '<div class="loader"></div> Depositing...';
                 const contract = new ethers.Contract(currentContractAddr, PIGGY_ABI, signer);
                 await (await contract.deposit(units)).wait();
                 track(); 
@@ -623,7 +656,7 @@
             const btn = document.getElementById('release-btn');
             try {
                 btn.disabled = true;
-                btn.innerHTML = '<div class="loader"></div>';
+                btn.innerHTML = '<div class="loader"></div> Releasing...';
                 const contract = new ethers.Contract(currentContractAddr, PIGGY_ABI, signer);
                 await (await contract.release()).wait();
                 track();
