@@ -4,7 +4,7 @@
 
 OINK BASE is a serverless, "set-it-and-forget-it" savings vault. Once you deploy your piggy bank, the logic is locked into the blockchain. **No one—not even the creators—can change the rules or touch your funds.**
 
-![OINK BASE Dashboard](assets/dashboard_preview.png)
+![OINK BASE Dashboard](assets/dashboard_final.png)
 
 ## ✨ Why OINK BASE?
 
